@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public class DelayElement {
 
+  // very important for every element
   protected String id = UUID.randomUUID().toString();
 
   public String getId() {
