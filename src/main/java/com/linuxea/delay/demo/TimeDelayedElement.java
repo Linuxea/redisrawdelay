@@ -23,6 +23,7 @@ public class TimeDelayedElement extends DelayElement {
   public String toString() {
     return "TimeDelayedElement{" +
         "content='" + content + '\'' +
+        ", time='" + time + '\'' +
         ", id='" + id + '\'' +
         '}';
   }

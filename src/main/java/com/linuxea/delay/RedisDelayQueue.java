@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.resps.Tuple;
 
 public abstract class RedisDelayQueue<T extends DelayElement> implements DelayQueue<T>, Runnable {
 
@@ -59,17 +58,14 @@ public abstract class RedisDelayQueue<T extends DelayElement> implements DelayQu
   }
 
   private void doCore() {
-    List<Tuple> tuples = jedis.zrangeByScoreWithScores(this.queueName, 0, Double.MAX_VALUE, 0, 100);
-    Consumer<Tuple> consumer = tuple -> {
-      double score = tuple.getScore();
-      if (score <= System.currentTimeMillis()) {
-        String element = tuple.getElement();
-        T t = JSONObject.parseObject(element, tClass);
-        this.callback().execute(t);
-        this.jedis.zrem(this.queueName, element);
-      }
+    long currentTimeMillis = System.currentTimeMillis();
+    List<String> members = jedis.zrangeByScore(this.queueName, 0, currentTimeMillis, 0, 100);
+    Consumer<String> consumer = element -> {
+      T t = JSONObject.parseObject(element, tClass);
+      this.callback().execute(t);
+      this.jedis.zrem(this.queueName, element);
     };
 
-    tuples.forEach(consumer);
+    members.parallelStream().forEach(consumer);
   }
 }
